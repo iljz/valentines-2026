@@ -396,7 +396,7 @@
         </div>
 
         <div v-show="showMainContent && !showQuestionPage">
-            <div class="scroll-section"><div class="text-line" ref="line1">HAHA</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line1">hey babe</div></div>
             <div class="scroll-section"><div class="text-line" ref="line2">I bet that</div></div>
             <div class="scroll-section"><div class="text-line" ref="line3">You thought this was a real...</div></div>
             <div class="scroll-section"><div class="text-line" ref="line4">test</div></div>
@@ -470,6 +470,10 @@
                         <p class="celebration-subtitle">Locked in frr</p>
                     </div>
 
+                    <div class="celebration-message" :class="{ visible: showOneMoreThing }">
+                        <p>oh and one more thing...</p>
+                    </div>
+
                     <div class="celebration-next-btn" :class="{ visible: showCelebrationNextBtn }">
                         <button @click="goToLoveLetter">Click here if your cool and sexy</button>
                     </div>
@@ -525,6 +529,7 @@
                     showCelebrationGif: false,
                     showCelebrationMessage: false,
                     showCelebrationNextBtn: false,
+                    showOneMoreThing: false,
                     showLoveLetter: false,
                     
                     // Form Data
@@ -669,20 +674,25 @@
                                         this.$refs.celebrationMusic.play().catch(e => console.log(e));
                                     }
                                     
-                                    // Phase 4: GIF fades in (10s after celebration shows)
+                                    // Phase 4: GIF fades in (3s after celebration shows)
                                     setTimeout(() => {
                                         this.showCelebrationGif = true;
-                                    }, 10000);
+                                    }, 3000);
                                     
-                                    // Phase 5: Message fades in (20s after celebration shows)
+                                    // Phase 5: Message fades in (6s after celebration shows)
                                     setTimeout(() => {
                                         this.showCelebrationMessage = true;
-                                    }, 20000);
+                                    }, 6000);
 
-                                    // Phase 6: "One more thing" button fades in (30s after celebration shows)
+                                    // Phase 6: "oh and one more thing" fades in (12s after celebration shows)
+                                    setTimeout(() => {
+                                        this.showOneMoreThing = true;
+                                    }, 14000);
+
+                                    // Phase 7: Button fades in (14s after celebration shows)
                                     setTimeout(() => {
                                         this.showCelebrationNextBtn = true;
-                                    }, 6000);
+                                    }, 16000);
                                 });
                             }
                         });
