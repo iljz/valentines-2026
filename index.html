@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💕 Will You Be My Valentine? 💕</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* ------------------------------------------------
+           RESET & BASIC STYLES
+        ------------------------------------------------ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #0a1628 0%, #1b2a4a 50%, #0a1628 100%);
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        body.survey-active {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+        }
+
+        #app { position: relative; z-index: 10; }
+
+        /* ------------------------------------------------
+           FLOATING HEARTS BG
+        ------------------------------------------------ */
+        .heart-bg {
+            position: fixed;
+            font-size: 2rem;
+            animation: float linear infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* ------------------------------------------------
+           SCROLL TEXT SECTIONS
+        ------------------------------------------------ */
+        .scroll-section {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 2rem; position: relative;
+        }
+        .text-line {
+            font-size: 4rem; font-weight: bold; color: white;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+            text-align: center; opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 1.5s ease, transform 1.5s ease;
+            font-style: italic; line-height: 1.4;
+        }
+        .text-line.visible { opacity: 1; transform: translateY(0); }
+        .jump-button {
+            background: linear-gradient(135deg, #4fc3f7, #0288d1);
+            color: white; font-size: 2rem; padding: 1.5rem 3rem;
+            border: none; border-radius: 10px; cursor: pointer;
+            box-shadow: 0 8px 25px rgba(2, 136, 209, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        /* ------------------------------------------------
+           QUESTION CARD & GIFS
+        ------------------------------------------------ */
+        .question-page {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #ff6b9d 0%, #ffc3d4 50%, #ff6b9d 100%);
+        }
+        .question-section { width: 100%; display: flex; justify-content: center; }
+        
+        .question-card {
+            text-align: center; background: white; padding: 3rem 2rem;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(255, 107, 157, 0.4);
+            max-width: 500px; width: 90%;
+            /* Animation State 1: Hidden */
+            opacity: 0; transform: translateY(50px);
+            transition: opacity 1.5s ease, transform 1.5s ease;
+            position: relative; z-index: 20;
+        }
+        
+        /* THE FIX: When visible, remove transform so buttons can position correctly */
+        .question-card.visible { opacity: 1; transform: none; }
+
+        .question { font-size: 1.5rem; color: #333; margin: 2rem 0; font-weight: 600; }
+
+        .gif-section { display: flex; justify-content: center; margin-bottom: 1rem; }
+        .gif-container {
+            max-width: 500px; width: 100%; border-radius: 20px;
+            overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .gif-container img { width: 100%; height: auto; display: block; }
+        .heart { font-size: 4rem; margin: 1rem 0; animation: heartbeat 1.5s ease-in-out infinite; }
+
+        /* ------------------------------------------------
+           BUTTONS (THE FIX)
+        ------------------------------------------------ */
+        .button-container {
+            position: relative; /* Container acts as the map */
+            min-height: 100px; margin-top: 2rem;
+            display: flex; justify-content: center; align-items: center;
+            gap: 1.5rem;
+        }
+        button {
+            font-size: 1.2rem; padding: 1rem 2.5rem;
+            border: none; border-radius: 10px; cursor: pointer;
+            font-weight: bold; transition: transform 0.2s;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .yes-btn {
+            background: linear-gradient(135deg, #ff1744, #ff6b9d);
+            color: white; box-shadow: 0 4px 15px rgba(255, 23, 68, 0.4);
+            z-index: 50;
+        }
+        .no-btn {
+            background: linear-gradient(135deg, #9e9e9e, #bdbdbd);
+            color: white; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative; /* Starts static */
+            z-index: 9999;
+        }
+        .no-btn.moving {
+            position: absolute; /* Moves relative to PAGE */
+            transition: left 0.3s ease, top 0.3s ease;
+        }
+
+        /* ------------------------------------------------
+           SURVEY STYLES
+        ------------------------------------------------ */
+        .survey-container {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: 2rem;
+        }
+        .survey-card {
+            background: #ecf0f1; padding: 3rem 2.5rem; border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 700px; width: 90%; animation: fadeIn 0.5s ease-in;
+        }
+        .survey-header { text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #bdc3c7; padding-bottom: 1.5rem; }
+        .survey-header h2 { color: #2c3e50; margin-bottom: 0.5rem; }
+        .survey-question { margin-bottom: 2rem; padding: 1.5rem; background: white; border-radius: 6px; }
+        .survey-question label { display: block; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #2c3e50; }
+        .options { display: flex; flex-direction: column; gap: 0.8rem; }
+        .option-item { display: flex; align-items: center; padding: 0.8rem; background: #f8f9fa; border: 2px solid #dfe6e9; border-radius: 4px; cursor: pointer; }
+        .option-item:hover { background: #e8f4f8; border-color: #3498db; }
+        .option-text { margin-left: 10px; }
+        .next-button { width: 100%; background: #3498db; color: white; margin-top: 1rem; }
+
+        /* ------------------------------------------------
+           INTRO & CELEBRATION
+        ------------------------------------------------ */
+        .intro-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; align-items: center; justify-content: center;
+            z-index: 10000;
+        }
+        .intro-screen.fade-out { animation: fadeOut 3s ease-out forwards; }
+        @keyframes fadeOut { to { opacity: 0; } }
+
+        /* Video Phase - black screen with video */
+        .celebration-video-phase {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10001;
+            animation: fadeIn 1s ease-in;
+            transition: opacity 2s ease;
+        }
+        .celebration-video-phase.fade-out { opacity: 0; pointer-events: none; }
+        
+        .celebration-video {
+            max-height: 85vh; max-width: 90vw;
+            border-radius: 12px; overflow: hidden;
+            opacity: 0; transform: scale(0.95);
+            transition: opacity 2s ease, transform 2s ease;
+        }
+        .celebration-video.visible { opacity: 1; transform: scale(1); }
+        .celebration-video video {
+            max-height: 85vh; width: auto; height: auto; display: block;
+            border-radius: 12px;
+        }
+
+        /* Final Celebration Phase - pink party screen */
+        .celebration {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10000;
+            animation: discoFlash 3s ease-in-out infinite;
+        }
+        @keyframes discoFlash {
+            0%   { background: rgba(255, 50, 100, 0.92); }
+            14%  { background: rgba(120, 50, 255, 0.92); }
+            28%  { background: rgba(50, 200, 255, 0.92); }
+            42%  { background: rgba(50, 255, 120, 0.92); }
+            57%  { background: rgba(255, 220, 50, 0.92); }
+            71%  { background: rgba(255, 100, 50, 0.92); }
+            85%  { background: rgba(255, 50, 200, 0.92); }
+            100% { background: rgba(255, 50, 100, 0.92); }
+        }
+        .celebration-content { text-align: center; color: white; animation: fadeIn 0.5s ease-in; max-width: 600px; width: 90%; }
+        .celebration-hearts { font-size: 5rem; margin: 1rem 0; animation: heartbeat 1s ease-in-out infinite; }
+        .celebration-title { font-size: 3rem; margin-bottom: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        
+        .celebration-gif {
+            max-width: 400px; width: 100%; margin: 1.5rem auto;
+            border-radius: 20px; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            opacity: 0; transform: scale(0.8);
+            transition: opacity 1.5s ease, transform 1.5s ease;
+        }
+        .celebration-gif.visible { opacity: 1; transform: scale(1); }
+        .celebration-gif img { width: 100%; height: auto; display: block; }
+        
+        .celebration-message {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 2s ease, transform 2s ease;
+            margin-top: 2rem;
+        }
+        .celebration-message.visible { opacity: 1; transform: translateY(0); }
+        .celebration-message p {
+            font-size: 1.8rem; font-style: italic; color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            line-height: 1.6;
+        }
+        .celebration-subtitle {
+            font-size: 1.4rem !important; margin-top: 1rem;
+            font-style: normal !important; font-weight: bold;
+        }
+
+        .celebration-next-btn {
+            opacity: 0; transform: translateY(15px);
+            transition: opacity 2s ease, transform 2s ease;
+            margin-top: 2rem;
+        }
+        .celebration-next-btn.visible { opacity: 1; transform: translateY(0); }
+        .celebration-next-btn button {
+            padding: 14px 40px; font-size: 1.2rem; font-weight: bold;
+            border: 2px solid white; border-radius: 50px;
+            background: rgba(255,255,255,0.2); color: white;
+            cursor: pointer; backdrop-filter: blur(5px);
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+        .celebration-next-btn button:hover {
+            background: rgba(255,255,255,0.4); transform: scale(1.05);
+        }
+
+        /* Final Love Letter Page */
+        .love-letter-page {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 30%, #f48fb1 60%, #fce4ec 100%);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10002;
+            animation: fadeIn 2s ease-in;
+        }
+        .love-letter-content {
+            text-align: center; max-width: 650px; width: 90%; padding: 3rem;
+        }
+        .love-letter-content p {
+            font-size: 1.8rem; color: #6d4c5e; line-height: 2;
+            font-style: italic;
+            opacity: 0; transform: translateY(20px);
+            animation: letterLineIn 1.5s ease forwards;
+        }
+        .love-letter-content p:nth-child(2) { animation-delay: 3s; }
+        .love-letter-content p:nth-child(3) { animation-delay: 6s; }
+        .love-letter-content .love-heart {
+            font-size: 4rem; margin-top: 2rem;
+            opacity: 0; animation: letterLineIn 1.5s ease forwards;
+            animation-delay: 9s;
+        }
+        .love-letter-gif {
+            max-width: 350px; width: 80%; margin: 2rem auto 0;
+            border-radius: 16px; overflow: hidden;
+            box-shadow: 0 8px 25px rgba(109, 76, 94, 0.2);
+            opacity: 0; animation: letterLineIn 1.5s ease forwards;
+            animation-delay: 9s;
+        }
+        .love-letter-gif img, .love-letter-gif video { width: 100%; height: auto; display: block; }
+        @keyframes letterLineIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 25% { transform: scale(1.1); } 50% { transform: scale(1); } }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            .text-line { font-size: 2.5rem; }
+            .question { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        
+        <div v-if="showSurvey" class="survey-container">
+
+            <div class="survey-card">
+                <div class="survey-header">
+                    <h2>The Philosophical Alignment Test</h2>
+                    <p>Analyzing compatibility through abstract philosophy...</p>
+                    <div style="text-align: center; margin: 1rem auto 0; padding: 0.8rem 1.5rem; background: rgba(172, 17, 0, 0.85); color: white; border-radius: 8px; font-size: 0.95rem; font-weight: 600;">
+                        Turn your sound on - part of this test will use sound unexpectedly, it is important that your sound is on.
+                    </div>
+                </div>
+                
+                <div class="survey-question">
+                    <label>1. In a perfect system, how do we handle entropy (chaos)?</label>
+                    <div class="options">
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q1" value="order"><span class="option-text">Rigid structure prevents collapse</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q1" value="flow"><span class="option-text">Surf the waves of chaos</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q1" value="balance"><span class="option-text">Controlled chaos in a container</span></label>
+                    </div>
+                </div>
+
+                <div class="survey-question">
+                    <label>2. Which is more important for survival?</label>
+                    <div class="options">
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q2" value="individual"><span class="option-text">Solitary genius</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q2" value="hive"><span class="option-text">Collective bond</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q2" value="duo"><span class="option-text">Partnership of two minds</span></label>
+                    </div>
+                </div>
+
+                <div class="survey-question">
+                    <label>3. Crossroads in the fog. Do you:</label>
+                    <div class="options">
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q3" value="map"><span class="option-text">Plan a route</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q3" value="walk"><span class="option-text">Trust intuition</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q3" value="hand"><span class="option-text">Grab a hand and jump</span></label>
+                    </div>
+                </div>
+
+                <div class="survey-question">
+                    <label>4. The Abstract Trolley Problem: Logic vs. Loyalty.</label>
+                    <div class="options">
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q4" value="logic"><span class="option-text">Save the many (Logic)</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q4" value="loyalty"><span class="option-text">Save the one you love</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q4" value="break"><span class="option-text">Break the trolley (Idealist)</span></label>
+                    </div>
+                </div>
+
+                <div class="survey-question">
+                    <label>5. If time is a river, where is your focus?</label>
+                    <div class="options">
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q5" value="past"><span class="option-text">Upstream (Past)</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q5" value="future"><span class="option-text">Downstream (Future)</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q5" value="present"><span class="option-text">Keeping the boat steady</span></label>
+                    </div>
+                </div>
+
+                <div class="survey-question">
+                    <label>6. System Error (Argument). Patch?</label>
+                    <div class="options">
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q6" value="space"><span class="option-text">System Reboot (Space)</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q6" value="talk"><span class="option-text">Immediate Debug (Talk)</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q6" value="food"><span class="option-text">Bribery with food</span></label>
+                    </div>
+                </div>
+
+                <div class="survey-question">
+                    <label>7. Prisoner's Dilemma. Do you trust them?</label>
+                    <div class="options">
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q7" value="defect"><span class="option-text">No, protect self</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q7" value="cooperate"><span class="option-text">Yes, trust completely</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q7" value="wildcard"><span class="option-text">Confuse the interrogator</span></label>
+                    </div>
+                </div>
+
+                <div class="survey-question">
+                    <label>8. What defies entropy?</label>
+                    <div class="options">
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q8" value="gravity"><span class="option-text">Gravity</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q8" value="42"><span class="option-text">The number 42</span></label>
+                        <label class="option-item"><input type="radio" v-model="surveyAnswers.q8" value="love"><span class="option-text" style="color: #e17055; font-weight: bold;">Love</span></label>
+                    </div>
+                </div>
+
+                <button class="next-button" @click="startExperience">Next Page</button>
+            </div>
+        </div>
+
+        <div v-if="showIntro" class="intro-screen" :class="{ 'fade-out': showMainContent }">
+            <div style="max-width: 500px; width: 90%;">
+                 <iframe src="https://giphy.com/embed/0SVAVxeJsnJ1WRMIPX" width="100%" height="480" style="" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+            </div>
+        </div>
+
+        <div v-show="showMainContent && !showQuestionPage">
+            <div class="scroll-section"><div class="text-line" ref="line1">HAHA</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line2">I bet that</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line3">You thought this was a real...</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line4">test</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line5">well guess what its not</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line6">now i bet your wondering...</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line7">what is this</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line8">well</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line9">I'm running out of words</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line10">to put down</div></div>
+            <div class="scroll-section"><div class="text-line" ref="line11">click the button below to find out</div></div>
+
+            <div class="scroll-section">
+                <div class="text-line visible" style="cursor: pointer;" @click="jumpToQuestion">
+                    <button class="jump-button">Click Here </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showQuestionPage" class="question-page">
+            <div class="question-section">
+                <div class="question-card" ref="questionCard" v-if="!answered">
+                    <div class="heart">Hey... 😏</div>
+                    
+                    <div class="gif-section">
+                        <div class="gif-container visible">
+                            <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExY2w4dHAyeDZmYTc5cXNoaWF3NWF5MWI0enRhcDhhNjY0dzllcXg1NSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/sUW2qRF1XtN30h27Sr/giphy.gif" alt="Romantic gif">
+                        </div>
+                    </div>
+                    
+                    <div class="question">Be my valentine 👉👈?</div>
+                    
+                    <div class="button-container">
+                        <button class="yes-btn" @click="handleYes" :style="yesButtonStyle">Yes! 💕</button>
+                        
+                        <button 
+                            class="no-btn" 
+                            :class="{ moving: isMovingMode }"
+                            @mouseenter="moveNoButton"
+                            @touchstart="moveNoButton" 
+                            @click="handleNo"
+                            :style="noButtonStyle"
+                        >
+                            No 😢
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase A: Video on black screen (sits on top) -->
+            <div v-if="answered" class="celebration-video-phase" :class="{ 'fade-out': showFinalCelebration }">
+                <div class="celebration-video" :class="{ visible: showCelebrationVideo }">
+                    <video ref="celebrationVideo" playsinline>
+                        <source src="video/movie.mov" type="video/quicktime">
+                        <source src="video/movie.mov" type="video/mp4">
+                    </video>
+                </div>
+            </div>
+
+            <!-- Phase B: Final celebration page (pink, behind video phase) -->
+            <div v-if="answered" class="celebration">
+                <div class="celebration-content">
+                    <div class="celebration-hearts">BOOOMMMM</div>
+                    <h2 class="celebration-title">LETS GOOOO</h2>
+                    
+                    <div class="celebration-gif" :class="{ visible: showCelebrationGif }">
+                        <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3EyYXBjMnR2c3phemp6aWJtaDJsZXl5bzlpeDA2Znl0enc1cTVvdSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ORjfgiG9ZtxcQQwZzv/giphy.gif" alt="Celebration gif">
+                    </div>
+                    
+                    <div class="celebration-message" :class="{ visible: showCelebrationMessage }">
+                        <p>NO escapee you my valentine now</p>
+                        <p class="celebration-subtitle">Locked in frr</p>
+                    </div>
+
+                    <div class="celebration-next-btn" :class="{ visible: showCelebrationNextBtn }">
+                        <button @click="goToLoveLetter">Click here if your cool and sexy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase C: Love Letter Page -->
+            <div v-if="showLoveLetter" class="love-letter-page">
+                <div class="love-letter-content">
+                    <p>you're my sunshine in the rain....</p>
+                    <p>srsly happy four years and valentines day.</p>
+                    <p>I love you :p</p>
+                    <!-- <div class="love-heart">❤️</div> -->
+
+                    <div class="love-letter-gif" ref="loveLetterGifContainer">
+                        <video ref="loveLetterVideo" autoplay muted loop playsinline>
+                            <source src="video/heart-vid.mov" type="video/quicktime">
+                            <source src="video/heart-vid.mov" type="video/mp4">
+                        </video>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <audio ref="introSoundEffect"><source src="music/SIKE.mp3" type="audio/mpeg"></audio>
+        <audio ref="bgMusic" loop><source src="music/i_need_girl.mp3" type="audio/mpeg"></audio>
+        <audio ref="celebrationMusic" loop><source src="music/celebrate.mp3" type="audio/mpeg"></audio>
+        <audio ref="loveLetterMusic" loop><source src="music/lemonade.mp3" type="audio/mpeg"></audio>
+        <div id="hearts-container"></div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    // States
+                    showSurvey: true,
+                    showIntro: false,
+                    showMainContent: false,
+                    showQuestionPage: false,
+                    answered: false,
+                    
+                    // Button Logic
+                    isMovingMode: false, // Switches from CSS layout to JS coordinates
+                    noButtonPosition: { left: 0, top: 0 },
+                    attempts: 0,
+                    
+                    // Celebration Phases
+                    showCelebrationVideo: false,
+                    showFinalCelebration: false,
+                    showCelebrationGif: false,
+                    showCelebrationMessage: false,
+                    showCelebrationNextBtn: false,
+                    showLoveLetter: false,
+                    
+                    // Form Data
+                    surveyAnswers: { q1:'', q2:'', q3:'', q4:'', q5:'', q6:'', q7:'', q8:'' }
+                }
+            },
+            computed: {
+                noButtonStyle() {
+                    // If not moving, let CSS flexbox handle the layout (side-by-side)
+                    if (!this.isMovingMode) return {};
+                    
+                    // Once moving, switch to absolute positioning
+                    return {
+                        position: 'absolute',
+                        left: this.noButtonPosition.left + 'px',
+                        top: this.noButtonPosition.top + 'px'
+                    }
+                },
+                yesButtonStyle() {
+                    // Grow the Yes button as they try to click No
+                    const scaleMultiplier = 1 + Math.floor(this.attempts / 5) * 0.5;
+                    return { transform: `scale(${scaleMultiplier})` }
+                }
+            },
+            methods: {
+                // ------------------------------------------------
+                // TRANSITION FLOW
+                // ------------------------------------------------
+                startExperience() {
+                    document.body.classList.remove('survey-active');
+                    this.showSurvey = false;
+                    this.showIntro = true;
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                    
+                    // Play Audio Sequence
+                    this.$nextTick(() => {
+                        const intro = this.$refs.introSoundEffect;
+                        const bgMusic = this.$refs.bgMusic;
+                        
+                        if (intro && bgMusic) {
+                            intro.volume = 0.8; 
+                            bgMusic.volume = 0.9; 
+                            intro.play().catch(e => console.log("Audio play failed (user didn't interact?)", e));
+
+                            // Switch to background music after 3 seconds
+                            setTimeout(() => {
+                                intro.pause();
+                                bgMusic.play().catch(e => console.log(e));
+                            }, 3000);
+                        }
+                    });
+                    
+                    // Show Main Content after intro
+                    setTimeout(() => {
+                        this.showMainContent = true;
+                        setTimeout(() => {
+                            this.showIntro = false;
+                            this.handleScroll(); // Trigger initial scroll check
+                        }, 1500);
+                    }, 3000);
+                },
+
+                jumpToQuestion() {
+                    this.showQuestionPage = true;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                // ------------------------------------------------
+                // BUTTON LOGIC (THE FIX)
+                // ------------------------------------------------
+                handleNo() {
+                    this.moveNoButton();
+                },
+                
+                moveNoButton() {
+                    this.isMovingMode = true; // Enable absolute positioning
+                    this.attempts++;
+
+                    const btn = document.querySelector('.no-btn');
+                    const card = this.$refs.questionCard;
+                    const container = document.querySelector('.button-container');
+
+                    if (!btn || !card || !container) return;
+
+                    // 1. Get Viewport Dimensions
+                    const btnRect = btn.getBoundingClientRect();
+                    const cardRect = card.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    // 2. Define Playground (Card area + 100px padding)
+                    const padding = 100;
+                    
+                    // 3. Calculate Boundaries (Clamped to Screen Size)
+                    // This math ensures the button never coordinates outside the visible window
+                    const minX = Math.max(20, cardRect.left - padding);
+                    const maxX = Math.min(window.innerWidth - btnRect.width - 20, cardRect.right + padding);
+                    
+                    const minY = Math.max(20, cardRect.top - padding);
+                    const maxY = Math.min(window.innerHeight - btnRect.height - 20, cardRect.bottom + padding);
+
+                    // 4. Generate Random Coordinates (Screen Space)
+                    // If card is wider than screen, clamp max to min
+                    const safeMaxX = maxX > minX ? maxX : minX;
+                    const safeMaxY = maxY > minY ? maxY : minY;
+
+                    const randomX = Math.random() * (safeMaxX - minX) + minX;
+                    const randomY = Math.random() * (safeMaxY - minY) + minY;
+
+                    // 5. Convert Screen Space to Container Space
+                    // We subtract container position to get the correct 'absolute' offset
+                    this.noButtonPosition = {
+                        left: randomX - containerRect.left,
+                        top: randomY - containerRect.top
+                    };
+                },
+
+                handleYes() {
+                    this.answered = true;
+                    
+                    // Phase 1: Fade to black (immediate) + stop background music
+                    if (this.$refs.bgMusic) this.$refs.bgMusic.pause();
+                    
+                    // Phase 2: Fade in video and play it (after 2s black screen)
+                    setTimeout(() => {
+                        this.showCelebrationVideo = true;
+                        
+                        this.$nextTick(() => {
+                            const video = this.$refs.celebrationVideo;
+                            if (video) {
+                                video.play().catch(e => console.log("Video play error:", e));
+                                
+                                // Phase 3: When video ends, fade out video screen → reveal celebration
+                                video.addEventListener('ended', () => {
+                                    this.showFinalCelebration = true; // Triggers fade-out on video phase
+                                    
+                                    // Start confetti
+                                    this.createConfetti();
+                                    
+                                    // Start lemonade music
+                                    if (this.$refs.celebrationMusic) {
+                                        this.$refs.celebrationMusic.volume = 0.6;
+                                        this.$refs.celebrationMusic.play().catch(e => console.log(e));
+                                    }
+                                    
+                                    // Phase 4: GIF fades in (1.5s after celebration shows)
+                                    setTimeout(() => {
+                                        this.showCelebrationGif = true;
+                                    }, 1500);
+                                    
+                                    // Phase 5: Message fades in (3.5s after celebration shows)
+                                    setTimeout(() => {
+                                        this.showCelebrationMessage = true;
+                                    }, 3500);
+
+                                    // Phase 6: "One more thing" button fades in (6s after celebration shows)
+                                    setTimeout(() => {
+                                        this.showCelebrationNextBtn = true;
+                                    }, 6000);
+                                });
+                            }
+                        });
+                    }, 2000);
+                },
+
+                goToLoveLetter() {
+                    // Stop celebration music
+                    if (this.$refs.celebrationMusic) {
+                        this.$refs.celebrationMusic.pause();
+                    }
+                    
+                    this.showLoveLetter = true;
+                    
+                    // Play love letter music after a brief pause for the fade-in
+                    setTimeout(() => {
+                        if (this.$refs.loveLetterMusic) {
+                            this.$refs.loveLetterMusic.volume = 0.5;
+                            this.$refs.loveLetterMusic.play().catch(e => console.log(e));
+                        }
+                    }, 1000);
+                },
+
+                // ------------------------------------------------
+                // UTILS (Confetti & Scroll)
+                // ------------------------------------------------
+                createConfetti() {
+                    const container = document.getElementById('hearts-container');
+                    for (let i = 0; i < 50; i++) {
+                        setTimeout(() => {
+                            const heart = document.createElement('div');
+                            heart.className = 'heart-bg';
+                            heart.textContent = ['💕', '💖', '💗', '💓', '💝'][Math.floor(Math.random() * 5)];
+                            heart.style.left = Math.random() * 100 + 'vw';
+                            heart.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                            heart.style.animationDelay = Math.random() * 2 + 's';
+                            container.appendChild(heart);
+                            setTimeout(() => heart.remove(), 8000);
+                        }, i * 100);
+                    }
+                },
+                handleScroll() {
+                    if (this.showSurvey) return;
+                    
+                    // Check text lines
+                    ['line1', 'line2', 'line3', 'line4', 'line5', 'line6', 'line7', 'line8', 'line9', 'line10', 'line11'].forEach(ref => {
+                        const element = this.$refs[ref];
+                        if (element) {
+                            const rect = element.getBoundingClientRect();
+                            if (rect.top >= 0 && rect.top <= (window.innerHeight * 0.75)) {
+                                element.classList.add('visible');
+                            }
+                        }
+                    });
+                    
+                    // Check question card (if visible)
+                    if (this.$refs.questionCard) {
+                        const rect = this.$refs.questionCard.getBoundingClientRect();
+                        if (rect.top >= 0 && rect.top <= (window.innerHeight * 0.75)) {
+                            this.$refs.questionCard.classList.add('visible');
+                        }
+                    }
+                }
+            },
+            mounted() {
+                if (this.showSurvey) document.body.classList.add('survey-active');
+                
+                // Create initial background hearts
+                const container = document.getElementById('hearts-container');
+                if (container) {
+                    for (let i = 0; i < 15; i++) {
+                        const heart = document.createElement('div');
+                        heart.className = 'heart-bg';
+                        heart.textContent = ['💕', '💖', '💗', '💓', '💝'][Math.floor(Math.random() * 5)];
+                        heart.style.left = Math.random() * 100 + 'vw';
+                        heart.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                        heart.style.animationDelay = Math.random() * 5 + 's';
+                        container.appendChild(heart);
+                    }
+                }
+                
+                window.addEventListener('scroll', this.handleScroll);
+            },
+            beforeUnmount() {
+                window.removeEventListener('scroll', this.handleScroll);
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
