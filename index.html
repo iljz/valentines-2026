@@ -669,17 +669,17 @@
                                         this.$refs.celebrationMusic.play().catch(e => console.log(e));
                                     }
                                     
-                                    // Phase 4: GIF fades in (1.5s after celebration shows)
+                                    // Phase 4: GIF fades in (10s after celebration shows)
                                     setTimeout(() => {
                                         this.showCelebrationGif = true;
-                                    }, 1500);
+                                    }, 10000);
                                     
-                                    // Phase 5: Message fades in (3.5s after celebration shows)
+                                    // Phase 5: Message fades in (20s after celebration shows)
                                     setTimeout(() => {
                                         this.showCelebrationMessage = true;
-                                    }, 3500);
+                                    }, 20000);
 
-                                    // Phase 6: "One more thing" button fades in (6s after celebration shows)
+                                    // Phase 6: "One more thing" button fades in (30s after celebration shows)
                                     setTimeout(() => {
                                         this.showCelebrationNextBtn = true;
                                     }, 6000);
